@@ -1,3 +1,6 @@
+import logger from './logger';
+import setupSitemapAndRobots from './sitemapAndRobots';
+
 const express = require('express');
 const session = require('express-session');
 const mongoSessionStore = require('connect-mongo');
@@ -14,13 +17,15 @@ const api = require('./api');
 const routesWithSlug = require('./routesWithSlug');
 const { stripeCheckoutCallback } = require('./stripe');
 
+const getRootUrl = require('../lib/api/getRootUrl');
+
 require('dotenv').config();
 
 const dev = process.env.NODE_ENV !== 'production';
-const MONGO_URL = process.env.MONGO_URL_TEST;
+const MONGO_URL = dev ? process.env.MONGO_URL_TEST : process.env.MONGO_URL;
 
 const port = process.env.PORT || 8000;
-const ROOT_URL = `http://localhost:${port}`;
+const ROOT_URL = getRootUrl();
 
 const options = {
   useNewUrlParser: true,
@@ -73,6 +78,7 @@ app.prepare().then(async () => {
   routesWithSlug({ server, app });
 
   stripeCheckoutCallback({ server });
+  setupSitemapAndRobots({ server });
 
   server.get('*', (req, res) => {
     const url = URL_MAP[req.path];
@@ -85,6 +91,6 @@ app.prepare().then(async () => {
 
   server.listen(port, (err) => {
     if (err) throw err;
-    console.log(`> Ready on ${ROOT_URL}`);
+    logger.info(`> Ready on ${ROOT_URL}`);
   });
 });
